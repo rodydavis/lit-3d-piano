@@ -10,7 +10,6 @@ export class PianoComponent extends LitElement {
   synth = new Tone.Synth().toDestination();
   notes = new Map<string, boolean>();
   raycaster = new THREE.Raycaster();
-  mouse = new THREE.Vector2();
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
     70,
@@ -31,6 +30,9 @@ export class PianoComponent extends LitElement {
     main {
       width: 100%;
       height: 100vh;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
     }
     canvas {
       width: 100%;
@@ -39,22 +41,23 @@ export class PianoComponent extends LitElement {
   `;
 
   render() {
+    const tapNote = (x, y) => {
+      const dx = (x / window.innerWidth) * 2 - 1;
+      const dy = -(y / window.innerHeight) * 2 + 1;
+      this.findNote(new THREE.Vector2(dx, dy));
+    };
     return html`<main>
       <canvas
         @touchstart=${(e: any) => {
-          this.mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
-          this.mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
-          this.findNote();
+          for (const touch of e.touches) {
+            tapNote(touch.clientX, touch.clientY);
+          }
         }}
         @touchend=${() => {
           this.onKeyUp();
         }}
-        @mousemove=${(e: any) => {
-          this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-          this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        }}
-        @mousedown=${() => {
-          this.findNote();
+        @mousedown=${(e: any) => {
+          tapNote(e.clientX, e.clientY);
         }}
         @mouseup=${() => {
           this.onKeyUp();
@@ -91,9 +94,9 @@ export class PianoComponent extends LitElement {
     this.buildPiano();
   }
 
-  findNote() {
+  findNote(mouse: THREE.Vector2) {
     // update the picking ray with the camera and mouse position
-    this.raycaster.setFromCamera(this.mouse, this.camera);
+    this.raycaster.setFromCamera(mouse, this.camera);
 
     // calculate objects intersecting the picking ray
     const intersects = this.raycaster.intersectObjects(
