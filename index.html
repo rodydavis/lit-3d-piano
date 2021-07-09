@@ -12,16 +12,19 @@
         padding: 0;
       }
       body {
+        width: 100%;
         min-height: 100vh;
         min-height: -webkit-fill-available;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
       }
 
       html {
         height: -webkit-fill-available;
       }
       piano-component {
-        width: 100%;
-        height: 100vh;
+        flex: 1;
       }
     </style>
   <script type="module" crossorigin src="/lit-3d-piano/lit-3d-piano.es.js"></script>
