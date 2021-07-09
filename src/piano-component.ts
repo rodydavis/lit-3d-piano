@@ -90,7 +90,6 @@ export class PianoComponent extends LitElement {
     const obj = intersects.length > 0 ? intersects[0] : null;
     if (obj?.object?.userData) {
       const { note } = obj.object.userData;
-      console.log("note", note);
       this.playNote(note);
     }
   }
