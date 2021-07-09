@@ -67,6 +67,7 @@ export class PianoComponent extends LitElement {
     return html`<main>
       <canvas
         @touchstart=${(e: any) => {
+          e.preventDefault();
           for (const touch of e.touches) {
             tapNote(touch.clientX, touch.clientY);
           }
@@ -81,6 +82,7 @@ export class PianoComponent extends LitElement {
           this.onKeyUp();
         }}
         @mousedown=${(e: any) => {
+          e.preventDefault();
           tapNote(e.clientX, e.clientY);
         }}
         @mouseup=${() => {
