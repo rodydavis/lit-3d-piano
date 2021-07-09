@@ -18,6 +18,8 @@ export class PianoComponent extends LitElement {
     0.001,
     10
   );
+  renderer?: THREE.WebGLRenderer;
+  controls?: OrbitControls;
 
   public get context(): CanvasRenderingContext2D {
     const ctx = this.canvas.getContext("2d")!;
@@ -39,35 +41,46 @@ export class PianoComponent extends LitElement {
   render() {
     return html`<main>
       <canvas
+        @touchstart=${(e: any) => {
+          this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+          this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+          this.findNote();
+        }}
+        @touchend=${() => {
+          this.onKeyUp();
+        }}
         @mousemove=${(e: any) => {
           this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
           this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
         }}
-        @click=${() => {
+        @mousedown=${() => {
           this.findNote();
+        }}
+        @mouseup=${() => {
+          this.onKeyUp();
         }}
       ></canvas>
     </main>`;
   }
+
+  onKeyUp = () => {};
 
   firstUpdated() {
     // Setup the camera
     this.camera.position.z = 1;
 
     // Paint the 3D scene on the canvas
-    const renderer = new THREE.WebGLRenderer({
+    this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       canvas: this.canvas,
       alpha: true,
     });
-    const controls = new OrbitControls(this.camera, renderer.domElement);
-    controls.screenSpacePanning = true;
-    controls.enableKeys = true;
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setAnimationLoop((time) =>
-      this.updateLoop(time, renderer, controls)
-    );
-    renderer.setClearColor("red", 1);
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.screenSpacePanning = true;
+    this.controls.enableKeys = true;
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setAnimationLoop(() => this.paint());
+    this.renderer.setClearColor("red", 1);
 
     // Add Lights
     const color = 0xffffff;
@@ -89,9 +102,33 @@ export class PianoComponent extends LitElement {
     );
     const obj = intersects.length > 0 ? intersects[0] : null;
     if (obj?.object?.userData) {
-      const { note } = obj.object.userData;
-      this.playNote(note);
+      if (obj.object instanceof THREE.Mesh) {
+        obj.object.material.color.set("gray");
+        const { note } = obj.object.userData;
+        const color = note.includes("#") ? "black" : "white";
+        this.playNote(note);
+        this.onKeyUp = () => {
+          // @ts-ignore
+          obj?.object?.material.color.set(color);
+        };
+      }
     }
+  }
+
+  findNode(
+    note: string,
+    nodes: THREE.Object3D[]
+  ): THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null {
+    for (const node of nodes) {
+      if (node instanceof THREE.Mesh) {
+        return node;
+      }
+      if (node instanceof THREE.Group) {
+        const child = this.findNode(note, node.children);
+        if (child) return child;
+      }
+    }
+    return null;
   }
 
   noteMap: any = {
@@ -162,14 +199,9 @@ export class PianoComponent extends LitElement {
     return mesh;
   }
 
-  updateLoop(
-    _: number,
-    renderer: THREE.WebGLRenderer,
-    controls: OrbitControls
-  ) {
-    // this.scene.children.splice(0, this.scene.children.length);
-    renderer.render(this.scene, this.camera);
-    controls.update();
+  paint() {
+    this.renderer!.render(this.scene, this.camera);
+    this.controls!.update();
   }
 
   playNote(note: NoteName) {
