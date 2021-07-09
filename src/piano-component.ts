@@ -108,72 +108,8 @@ export class PianoComponent extends LitElement {
 
   onKeyUp = () => {};
 
-  firstUpdated() {
-    // Setup the camera
-    this.camera.position.z = 1;
-
-    // Paint the 3D scene on the canvas
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      canvas: this.canvas,
-      alpha: true,
-    });
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.screenSpacePanning = true;
-    this.controls.enableKeys = true;
-    this.renderer.setAnimationLoop(() => this.paint());
-    this.renderer.setClearColor("red", 1);
-
-    const bgLight = new THREE.AmbientLight(0x404040);
-    this.scene.add(bgLight);
-
-    const light = new THREE.DirectionalLight(0x404040, 100);
-    light.position.set(10, 4, 0.7);
-    light.castShadow = true;
-    this.scene.add(light);
-
-    light.shadow.mapSize.width = 512;
-    light.shadow.mapSize.height = 512;
-    light.shadow.camera.near = 0.5;
-    light.shadow.camera.far = 500;
-
-    this.buildPiano();
-
-    document.addEventListener(
-      "keydown",
-      (e: any) => {
-        const key = e.key;
-        if (key === "z" && this.octave != 0) this.octave -= 1;
-        if (key === "x" && this.octave != octaves.length - 1) this.octave += 1;
-        const play = (note: string) => {
-          this.playNote(`${note}${octaves[this.octave]}`, () => {});
-        };
-        if (key === "a") play("C");
-        if (key === "w") play("C#");
-        if (key === "s") play("D");
-        if (key === "E") play("D#");
-        if (key === "d") play("E");
-        if (key === "f") play("F");
-        if (key === "t") play("F#");
-        if (key === "g") play("G");
-        if (key === "y") play("G#");
-        if (key === "h") play("A");
-        if (key === "u") play("A#");
-        if (key === "j") play("B");
-        if (key === "k") play("C");
-        if (key === "o") play("C#");
-        if (key === "l") play("D");
-        if (key === "p") play("D#");
-      },
-      false
-    );
-  }
-
   findNote(mouse: THREE.Vector2) {
-    // update the picking ray with the camera and mouse position
     this.raycaster.setFromCamera(mouse, this.camera);
-
-    // calculate objects intersecting the picking ray
     const intersects = this.raycaster.intersectObjects(
       this.scene.children,
       true
@@ -289,9 +225,75 @@ export class PianoComponent extends LitElement {
   }
 
   paint() {
-    this.renderer!.setSize(window.innerWidth, window.innerHeight);
     this.renderer!.render(this.scene, this.camera);
     this.controls!.update();
+  }
+
+  firstUpdated() {
+    this.camera.position.z = 1;
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      canvas: this.canvas,
+      alpha: true,
+    });
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.screenSpacePanning = true;
+    this.controls.enableKeys = true;
+    this.renderer!.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setAnimationLoop(() => this.paint());
+    this.renderer.setClearColor("red", 1);
+
+    const bgLight = new THREE.AmbientLight(0x404040);
+    this.scene.add(bgLight);
+
+    const light = new THREE.DirectionalLight(0x404040, 100);
+    light.position.set(10, 4, 0.7);
+    light.castShadow = true;
+    this.scene.add(light);
+
+    light.shadow.mapSize.width = 512;
+    light.shadow.mapSize.height = 512;
+    light.shadow.camera.near = 0.5;
+    light.shadow.camera.far = 500;
+
+    this.buildPiano();
+
+    document.addEventListener(
+      "keydown",
+      (e: any) => {
+        const key = e.key;
+        if (key === "z" && this.octave != 0) this.octave -= 1;
+        if (key === "x" && this.octave != octaves.length - 1) this.octave += 1;
+        const play = (note: string) => {
+          this.playNote(`${note}${octaves[this.octave]}`, () => {});
+        };
+        if (key === "a") play("C");
+        if (key === "w") play("C#");
+        if (key === "s") play("D");
+        if (key === "E") play("D#");
+        if (key === "d") play("E");
+        if (key === "f") play("F");
+        if (key === "t") play("F#");
+        if (key === "g") play("G");
+        if (key === "y") play("G#");
+        if (key === "h") play("A");
+        if (key === "u") play("A#");
+        if (key === "j") play("B");
+        if (key === "k") play("C");
+        if (key === "o") play("C#");
+        if (key === "l") play("D");
+        if (key === "p") play("D#");
+      },
+      false
+    );
+
+    window.addEventListener(
+      "resize",
+      () => {
+        this.renderer!.setSize(window.innerWidth, window.innerHeight);
+      },
+      false
+    );
   }
 }
 const notes = ["C", "D", "E", "F", "G", "A", "B"] as const;
