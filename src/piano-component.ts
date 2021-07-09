@@ -42,8 +42,8 @@ export class PianoComponent extends LitElement {
     return html`<main>
       <canvas
         @touchstart=${(e: any) => {
-          this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-          this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+          this.mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+          this.mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
           this.findNote();
         }}
         @touchend=${() => {
