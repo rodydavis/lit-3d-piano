@@ -84,7 +84,6 @@ export class PianoComponent extends LitElement {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.screenSpacePanning = true;
     this.controls.enableKeys = true;
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setAnimationLoop(() => this.paint());
     this.renderer.setClearColor("red", 1);
 
@@ -206,6 +205,7 @@ export class PianoComponent extends LitElement {
   }
 
   paint() {
+    this.renderer!.setSize(window.innerWidth, window.innerHeight);
     this.renderer!.render(this.scene, this.camera);
     this.controls!.update();
   }
