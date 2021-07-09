@@ -56,6 +56,9 @@ export class PianoComponent extends LitElement {
         @touchmove=${(e: any) => {
           e.preventDefault();
         }}
+        @touchcancel=${() => {
+          this.onKeyUp();
+        }}
         @touchend=${() => {
           this.onKeyUp();
         }}
