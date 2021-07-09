@@ -1,14 +1,17 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from "vite";
+import { resolve } from "path";
 
-// https://vitejs.dev/config/
 export default defineConfig({
+  base: "/lit-3d-piano/",
   build: {
     lib: {
-      entry: 'src/my-element.ts',
-      formats: ['es']
+      entry: "src/lit-sheet-music.ts",
+      formats: ["es"],
     },
     rollupOptions: {
-      external: /^lit-element/
-    }
-  }
-})
+      input: {
+        main: resolve(__dirname, "index.html"),
+      },
+    },
+  },
+});
