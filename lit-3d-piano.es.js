@@ -46,6 +46,7 @@ function Sm(t,e,n,i){var r,s=arguments.length,o=s<3?e:null===i?i=Object.getOwnPr
       <canvas
         @touchstart=${e=>{for(const n of e.touches)t(n.clientX,n.clientY)}}
         @touchmove=${t=>{t.preventDefault()}}
+        @touchcancel=${()=>{this.onKeyUp()}}
         @touchend=${()=>{this.onKeyUp()}}
         @mousedown=${e=>{t(e.clientX,e.clientY)}}
         @mouseup=${()=>{this.onKeyUp()}}
