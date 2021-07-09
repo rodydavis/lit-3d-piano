@@ -41,7 +41,7 @@ export class PianoComponent extends LitElement {
   `;
 
   render() {
-    const tapNote = (x, y) => {
+    const tapNote = (x: number, y: number) => {
       const dx = (x / window.innerWidth) * 2 - 1;
       const dy = -(y / window.innerHeight) * 2 + 1;
       this.findNote(new THREE.Vector2(dx, dy));
@@ -52,6 +52,9 @@ export class PianoComponent extends LitElement {
           for (const touch of e.touches) {
             tapNote(touch.clientX, touch.clientY);
           }
+        }}
+        @touchmove=${(e: any) => {
+          e.preventDefault();
         }}
         @touchend=${() => {
           this.onKeyUp();
