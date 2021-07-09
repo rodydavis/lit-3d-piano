@@ -74,6 +74,8 @@ export class PianoComponent extends LitElement {
     const intensity = 1;
     const light = new THREE.AmbientLight(color, intensity);
     this.scene.add(light);
+
+    this.buildPiano();
   }
 
   findNote() {
@@ -88,32 +90,42 @@ export class PianoComponent extends LitElement {
     const obj = intersects.length > 0 ? intersects[0] : null;
     if (obj?.object?.userData) {
       const { note } = obj.object.userData;
+      console.log("note", note);
       this.playNote(note);
     }
+  }
+
+  noteMap: any = {
+    C: "C#",
+    D: "D#",
+    F: "F#",
+    G: "G#",
+    A: "A#",
+  };
+
+  buildPiano() {
+    const group = new THREE.Group();
+    for (let i = 0; i < octaves.length; i++) {
+      const node = this.buildOctave(i, octaves[i]);
+      group.add(node);
+    }
+    group.position.x -= 2.5;
+    this.scene.add(group);
   }
 
   buildOctave(offset: number, octave: number) {
     const group = new THREE.Group();
     for (let i = 0; i < notes.length; i++) {
-      const note = this.buildPianoKey(i * 0.2, `${notes[i]}${octave}` as any);
-      if ([1, 2, 4, 5, 6].includes(i)) {
-        const noteMap: any = {
-          "1": "C#",
-          "2": "D#",
-          "3": "F#",
-          "4": "G#",
-          "5": "A#",
-        };
-        const accidental = this.buildAccidental(
-          i * 0.2,
-          `${noteMap[`${i}`]}${octave}` as any
-        );
+      const key = `${notes[i]}${octave}` as any;
+      const note = this.buildPianoKey(i * 0.2, key);
+      if (Object.keys(this.noteMap).includes(notes[i])) {
+        const note = `${this.noteMap[notes[i]]}${octave}`;
+        const accidental = this.buildAccidental(i * 0.2, note as any);
         group.add(accidental);
       }
       group.add(note);
     }
-    group.position.x += offset;
-    group.position.x -= 0.6;
+    group.position.x += 1.4 * offset;
     return group;
   }
 
@@ -144,7 +156,7 @@ export class PianoComponent extends LitElement {
     );
     const material = new THREE.MeshBasicMaterial({ color: "black" });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.x += offset - 0.1;
+    mesh.position.x += offset + 0.1;
     mesh.position.y += 0.08;
     mesh.position.z += 0.1;
     mesh.userData["note"] = note;
@@ -156,14 +168,7 @@ export class PianoComponent extends LitElement {
     renderer: THREE.WebGLRenderer,
     controls: OrbitControls
   ) {
-    this.scene.children.splice(0, this.scene.children.length);
-    const group = new THREE.Group();
-    for (let i = 0; i < octaves.length; i++) {
-      const node = this.buildOctave(i, octaves[i]);
-      group.add(node);
-      group.position.x -= 0.4;
-    }
-    this.scene.add(group);
+    // this.scene.children.splice(0, this.scene.children.length);
     renderer.render(this.scene, this.camera);
     controls.update();
   }
