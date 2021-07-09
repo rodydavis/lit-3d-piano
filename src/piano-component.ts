@@ -1,5 +1,5 @@
 import { html, css, LitElement } from "lit";
-import { customElement, query } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as Tone from "tone";
@@ -7,8 +7,9 @@ import * as Tone from "tone";
 @customElement("piano-component")
 export class PianoComponent extends LitElement {
   @query("canvas") canvas!: HTMLCanvasElement;
-  synth = new Tone.Synth().toDestination();
-  notes = new Map<string, boolean>();
+  @state() octave = 2;
+  @state() note = "";
+  synth = new Tone.PolySynth().toDestination();
   raycaster = new THREE.Raycaster();
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(
@@ -37,6 +38,23 @@ export class PianoComponent extends LitElement {
     canvas {
       width: 100%;
       height: 100%;
+      z-index: 0;
+    }
+    .controls {
+      z-index: 1;
+      position: fixed;
+      color: white;
+      font-size: 18px;
+      right: 10px;
+      top: 10px;
+    }
+    .note {
+      z-index: 1;
+      position: fixed;
+      color: white;
+      font-size: 18px;
+      left: 10px;
+      top: 10px;
     }
   `;
 
@@ -69,6 +87,22 @@ export class PianoComponent extends LitElement {
           this.onKeyUp();
         }}
       ></canvas>
+      <div class="controls">
+        OCTAVE: ${octaves[this.octave]}
+        <button
+          ?disabled=${this.octave === 0}
+          @click=${() => (this.octave -= 1)}
+        >
+          -
+        </button>
+        <button
+          ?disabled=${this.octave === octaves.length - 1}
+          @click=${() => (this.octave += 1)}
+        >
+          +
+        </button>
+      </div>
+      <div class="note">NOTE: ${this.note}</div>
     </main>`;
   }
 
@@ -90,13 +124,49 @@ export class PianoComponent extends LitElement {
     this.renderer.setAnimationLoop(() => this.paint());
     this.renderer.setClearColor("red", 1);
 
-    // Add Lights
-    const color = 0xffffff;
-    const intensity = 1;
-    const light = new THREE.AmbientLight(color, intensity);
+    const bgLight = new THREE.AmbientLight(0x404040);
+    this.scene.add(bgLight);
+
+    const light = new THREE.DirectionalLight(0x404040, 100);
+    light.position.set(10, 4, 0.7);
+    light.castShadow = true;
     this.scene.add(light);
 
+    light.shadow.mapSize.width = 512;
+    light.shadow.mapSize.height = 512;
+    light.shadow.camera.near = 0.5;
+    light.shadow.camera.far = 500;
+
     this.buildPiano();
+
+    document.addEventListener(
+      "keydown",
+      (e: any) => {
+        const key = e.key;
+        if (key === "z" && this.octave != 0) this.octave -= 1;
+        if (key === "x" && this.octave != octaves.length - 1) this.octave += 1;
+        const play = (note: string) => {
+          this.playNote(`${note}${octaves[this.octave]}`, () => {});
+        };
+        if (key === "a") play("C");
+        if (key === "w") play("C#");
+        if (key === "s") play("D");
+        if (key === "E") play("D#");
+        if (key === "d") play("E");
+        if (key === "f") play("F");
+        if (key === "t") play("F#");
+        if (key === "g") play("G");
+        if (key === "y") play("G#");
+        if (key === "h") play("A");
+        if (key === "u") play("A#");
+        if (key === "j") play("B");
+        if (key === "k") play("C");
+        if (key === "o") play("C#");
+        if (key === "l") play("D");
+        if (key === "p") play("D#");
+      },
+      false
+    );
   }
 
   findNote(mouse: THREE.Vector2) {
@@ -113,20 +183,27 @@ export class PianoComponent extends LitElement {
       if (obj.object instanceof THREE.Mesh) {
         obj.object.material.color.set("gray");
         const { note } = obj.object.userData;
-        const color = note.includes("#") ? "black" : "white";
-        this.playNote(note);
-        this.onKeyUp = () => {
+        this.playNote(note, (color) => {
           // @ts-ignore
           obj?.object?.material.color.set(color);
-        };
+        });
       }
     }
+  }
+
+  playNote(note: string, update: (color: string) => void) {
+    this.note = note;
+    const color = note.includes("#") ? "black" : "white";
+    this.synth.triggerAttackRelease(note, "8n");
+    this.onKeyUp = () => {
+      update(color);
+    };
   }
 
   findNode(
     note: string,
     nodes: THREE.Object3D[]
-  ): THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> | null {
+  ): THREE.Mesh<THREE.BoxGeometry, THREE.MeshStandardMaterial> | null {
     for (const node of nodes) {
       if (node instanceof THREE.Mesh) {
         return node;
@@ -165,8 +242,12 @@ export class PianoComponent extends LitElement {
       if (Object.keys(this.noteMap).includes(notes[i])) {
         const note = `${this.noteMap[notes[i]]}${octave}`;
         const accidental = this.buildAccidental(i * 0.2, note as any);
+        accidental.castShadow = true;
+        accidental.receiveShadow = false;
         group.add(accidental);
       }
+      note.castShadow = true;
+      note.receiveShadow = false;
       group.add(note);
     }
     group.position.x += 1.4 * offset;
@@ -185,7 +266,7 @@ export class PianoComponent extends LitElement {
       this.keyOptions.height,
       this.keyOptions.depth
     );
-    const material = new THREE.MeshBasicMaterial({ color: "white" });
+    const material = new THREE.MeshStandardMaterial({ color: "white" });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.x += offset;
     mesh.userData["note"] = note;
@@ -198,7 +279,7 @@ export class PianoComponent extends LitElement {
       this.keyOptions.height * 0.6,
       this.keyOptions.depth
     );
-    const material = new THREE.MeshBasicMaterial({ color: "black" });
+    const material = new THREE.MeshStandardMaterial({ color: "black" });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.x += offset + 0.1;
     mesh.position.y += 0.08;
@@ -211,13 +292,6 @@ export class PianoComponent extends LitElement {
     this.renderer!.setSize(window.innerWidth, window.innerHeight);
     this.renderer!.render(this.scene, this.camera);
     this.controls!.update();
-  }
-
-  playNote(note: NoteName) {
-    if (this.notes.get(note)) return;
-    this.notes.set(note, true);
-    this.synth.triggerAttackRelease(note, "8n");
-    this.notes.set(note, false);
   }
 }
 const notes = ["C", "D", "E", "F", "G", "A", "B"] as const;
