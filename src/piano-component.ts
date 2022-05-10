@@ -72,22 +72,14 @@ export class PianoComponent extends LitElement {
             tapNote(touch.clientX, touch.clientY);
           }
         }}
-        @touchmove=${(e: any) => {
-          e.preventDefault();
-        }}
-        @touchcancel=${() => {
-          this.onKeyUp();
-        }}
-        @touchend=${() => {
-          this.onKeyUp();
-        }}
+        @touchmove=${(e: any) => (e.preventDefault())}
+        @touchcancel=${() => (this.onKeyUp())}
+        @touchend=${() => (this.onKeyUp())}
         @mousedown=${(e: any) => {
           e.preventDefault();
           tapNote(e.clientX, e.clientY);
         }}
-        @mouseup=${() => {
-          this.onKeyUp();
-        }}
+        @mouseup=${() => (this.onKeyUp())}
       ></canvas>
       <div class="controls">
         OCTAVE: ${octaves[this.octave]}
